@@ -5,10 +5,10 @@ from zipfile import ZipFile
 import sqlite3
 import os
 import json
-from fpdf import FPDF
 import numpy as np
 from tqdm import tqdm
 import sys
+import cairo
 
 def get_dir(dirs, parent):
     dlist = []
@@ -41,17 +41,22 @@ def read_doc_list(tmpdir):
 
     return res
 
-def render_pdf(descriptor, tmpdir):
-    pdf = FPDF(orientation='P', unit='mm', format='letter')
-    scale = 279
-    width_scale = 0.1
+def render_pdf(descriptor, tmpdir, filename):
+    letter = (8.5 * 72, 11*72)
+
+    context = cairo.PDFSurface(filename, *letter)
+    scale = letter[1]
+    width_scale = 0.3
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
 
+    cr = cairo.Context(context)
+    cr.set_source_rgb(0, 0, 0)
+    cr.set_line_cap(cairo.LINE_CAP_ROUND)
+    cr.set_line_join(cairo.LINE_JOIN_ROUND)
+
     print("Rendering note %s" % descriptor["title"])
     for page in tqdm(descriptor["pages"]):
-        pdf.add_page()
-
         c = conn.cursor()
         c.execute('select points, matrixValues, thickness from NewShapeModel where pageUniqueId = "'+page+'"')
 
@@ -72,19 +77,18 @@ def render_pdf(descriptor, tmpdir):
             points = points[:, :2]
 
             # Draw
-            pdf.set_line_width(thickness * width_scale)
+            cr.set_line_width(thickness * width_scale)
 
             points = points * scale
 
-            for r in range(points.shape[0] - 1):
-                x_start = points[r][0]
-                y_start = points[r][1]
+            for r in range(points.shape[0]):
+                if r==0:
+                    cr.move_to(points[r][0], points[r][1])
+                else:
+                    cr.line_to(points[r][0], points[r][1])
 
-                x_end = points[r + 1][0]
-                y_end = points[r + 1][1]
-
-                pdf.line(x_start, y_start, x_end, y_end)
-    return pdf
+        cr.stroke()
+        cr.show_page()
 
 def render_all(zip_name, save_to):
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -98,11 +102,11 @@ def render_all(zip_name, save_to):
             print("   ", os.path.join(note["dirname"], note["title"]))
 
         for note in notes:
-            pdf = render_pdf(note, tmpdir)
             dir = os.path.join(save_to, note["dirname"])
             os.makedirs(dir, exist_ok=True)
+            fname = os.path.join(dir, "%s.pdf" % note["title"])
 
-            pdf.output(os.path.join(dir, "%s.pdf" % note["title"]))
+            render_pdf(note, tmpdir, fname)
 
 if __name__ == "__main__":
     if len(sys.argv)!=3:

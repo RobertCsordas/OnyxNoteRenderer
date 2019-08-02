@@ -1,4 +1,3 @@
 tqdm
 numpy
-fpdf
-
+pycairo
