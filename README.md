@@ -8,7 +8,7 @@ Tested with Onyx Boox Note Pro, Firmware 2.1.2.
 
 It can read the backup file (a collection of SQLite databases) and reder PDFs out of them.
 
-Currently it ignores the pressure of the strokes.
+Rendering strokes with pressure sensitivity is slow.
 
 The text transcription of each stroke is also available in the files, so it could be overlaid on the PDF in order to be searchable, but this is not done here.
 
@@ -45,11 +45,11 @@ points - a binary blog of points. See later
 thickness - line thickness
 matrixValues - transformation matrix
 pageUniqueId - the page containing this stroke
+shapeType - 5 for pressure sensitive pen, 2 for the pressure-agnostic pen
 ```
 
 The transformation matrix describes an affine transformation of each point in homogeneous coordinate system. Coordinates must be projected by this matrix before rendering.
 
 #### The points blob
 
-This describes the actual points of the drawing. Each point uses 24 bytes of data. The first 8 are the X and Y coordinates in *big endian* float32. I haven't tried to decode the rest, but it probably stores the pen pressure and maybe some acceleration information. 
- 
+This describes the actual points of the drawing. Each point uses 24 bytes of data. The first 8 are the X, Y coordinates in *big endian* float32. The next 4 is the pressure in the big endian float32. It's value seems to be between 0-6000. I haven't tried to decode the rest.
