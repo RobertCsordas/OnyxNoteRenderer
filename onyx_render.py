@@ -42,6 +42,17 @@ def read_doc_list(tmpdir):
 
     return res
 
+def subsample(bdata, subsample):
+    if subsample<=1:
+        return bdata
+
+    if bdata.shape[0] % subsample != 0:
+        last = bdata[-1:]
+        bdata = np.concatenate((bdata, *([last] * (subsample - bdata.shape[0] % subsample))), axis=0)
+
+    bdata = bdata.reshape(-1, subsample, *bdata.shape[1:])
+    return bdata.mean(1)
+
 def render_pdf(descriptor, tmpdir, filename):
     letter = (8.5 * 72, 11*72)
 
@@ -51,6 +62,7 @@ def render_pdf(descriptor, tmpdir, filename):
     pressure_norm = 1000
     pressure_pow = 0.5
     enable_pressure = True
+    n_subsample = 2
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
 
@@ -87,6 +99,9 @@ def render_pdf(descriptor, tmpdir, filename):
             points = points * scale
 
             has_pressure = enable_pressure and type == 5
+
+            points = subsample(points, n_subsample)
+            pressure = subsample(pressure, n_subsample)
 
             for r in range(points.shape[0]):
                 if has_pressure:
