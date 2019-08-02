@@ -9,6 +9,7 @@ import numpy as np
 from tqdm import tqdm
 import sys
 import cairo
+import math
 
 def get_dir(dirs, parent):
     dlist = []
@@ -47,6 +48,9 @@ def render_pdf(descriptor, tmpdir, filename):
     context = cairo.PDFSurface(filename, *letter)
     scale = letter[1]
     width_scale = 0.3
+    pressure_norm = 1000
+    pressure_pow = 0.5
+    enable_pressure = True
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
 
@@ -58,11 +62,11 @@ def render_pdf(descriptor, tmpdir, filename):
     print("Rendering note %s" % descriptor["title"])
     for page in tqdm(descriptor["pages"]):
         c = conn.cursor()
-        c.execute('select points, matrixValues, thickness from NewShapeModel where pageUniqueId = "'+page+'"')
+        c.execute('select points, matrixValues, thickness, shapeType from NewShapeModel where pageUniqueId = "'+page+'"')
 
         for i, row in enumerate(c):
             # Read / parse DB entries
-            points, matrix, thickness = row
+            points, matrix, thickness, type = row
             matrix = np.asarray(json.loads(matrix)["values"], dtype=np.float32).reshape(3,3)
 
             d = np.frombuffer(points, dtype=np.float32)
@@ -70,6 +74,7 @@ def render_pdf(descriptor, tmpdir, filename):
 
             d = d.reshape(-1, 6)
 
+            pressure = (d[:,2] / pressure_norm) ** pressure_pow
             # Projection matrix
             points = d[:, :2]
             points = np.concatenate((points, np.ones([points.shape[0],1])), axis=1)
@@ -81,11 +86,21 @@ def render_pdf(descriptor, tmpdir, filename):
 
             points = points * scale
 
+            has_pressure = enable_pressure and type == 5
+
             for r in range(points.shape[0]):
+                if has_pressure:
+                    cr.set_line_width(max(thickness * width_scale * pressure[r],0.1))
+
                 if r==0:
                     cr.move_to(points[r][0], points[r][1])
                 else:
                     cr.line_to(points[r][0], points[r][1])
+
+                    if has_pressure:
+                        # Must do separate strokes to change thickness.
+                        cr.stroke()
+                        cr.move_to(points[r][0], points[r][1])
 
         cr.stroke()
         cr.show_page()
