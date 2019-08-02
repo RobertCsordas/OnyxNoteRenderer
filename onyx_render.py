@@ -74,14 +74,14 @@ def render_pdf(descriptor, tmpdir):
             # Draw
             pdf.set_line_width(thickness * width_scale)
 
-            x_off = 0
-            y_off = 0
-            for r in range(points.shape[0] - 1):
-                x_start = scale * (points[r][0] + x_off)
-                y_start = scale * (points[r][1] + y_off)
+            points = points * scale
 
-                x_end = scale * (points[r + 1][0] + x_off)
-                y_end = scale * (points[r + 1][1] + y_off)
+            for r in range(points.shape[0] - 1):
+                x_start = points[r][0]
+                y_start = points[r][1]
+
+                x_end = points[r + 1][0]
+                y_end = points[r + 1][1]
 
                 pdf.line(x_start, y_start, x_end, y_end)
     return pdf
