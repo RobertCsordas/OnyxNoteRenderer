@@ -71,14 +71,16 @@ def render_pdf(descriptor, tmpdir, filename):
     cr.set_line_cap(cairo.LINE_CAP_ROUND)
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
 
+    prev_color = (0,0,0)
+
     print("Rendering note %s" % descriptor["title"])
     for page in tqdm(descriptor["pages"]):
         c = conn.cursor()
-        c.execute('select points, matrixValues, thickness, shapeType from NewShapeModel where pageUniqueId = "'+page+'"')
+        c.execute('select points, matrixValues, thickness, shapeType, color from NewShapeModel where pageUniqueId = "'+page+'"')
 
         for i, row in enumerate(c):
             # Read / parse DB entries
-            points, matrix, thickness, type = row
+            points, matrix, thickness, type, color = row
             matrix = np.asarray(json.loads(matrix)["values"], dtype=np.float32).reshape(3,3)
 
             d = np.frombuffer(points, dtype=np.float32)
@@ -95,6 +97,13 @@ def render_pdf(descriptor, tmpdir, filename):
 
             # Draw
             cr.set_line_width(thickness * width_scale)
+
+            color = color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF
+            color_changed = color != prev_color
+            if (color_changed):
+                cr.stroke()
+                prev_color = color
+                cr.set_source_rgb(color[2]/255, color[1]/255, color[1]/255);
 
             points = points * scale
 
@@ -117,6 +126,8 @@ def render_pdf(descriptor, tmpdir, filename):
                         cr.stroke()
                         cr.move_to(points[r][0], points[r][1])
 
+            if color_changed and not has_pressure:
+                cr.stroke()
         cr.stroke()
         cr.show_page()
 
