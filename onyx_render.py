@@ -72,6 +72,7 @@ def render_pdf(descriptor, tmpdir, filename):
     cr.set_line_join(cairo.LINE_JOIN_ROUND)
 
     prev_color = (0,0,0)
+    prev_thickness = 0
 
     print("Rendering note %s" % descriptor["title"])
     for page in tqdm(descriptor["pages"]):
@@ -96,14 +97,18 @@ def render_pdf(descriptor, tmpdir, filename):
             points = points[:, :2]
 
             # Draw
-            cr.set_line_width(thickness * width_scale)
+            thickness_changed = prev_thickness != thickness
+            if thickness_changed:
+                cr.stroke()
+                prev_thickness = thickness
+                cr.set_line_width(thickness * width_scale)
 
             color = color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF
             color_changed = color != prev_color
             if (color_changed):
                 cr.stroke()
                 prev_color = color
-                cr.set_source_rgb(color[2]/255, color[1]/255, color[1]/255);
+                cr.set_source_rgb(color[2]/255, color[1]/255, color[0]/255);
 
             points = points * scale
 
@@ -126,8 +131,6 @@ def render_pdf(descriptor, tmpdir, filename):
                         cr.stroke()
                         cr.move_to(points[r][0], points[r][1])
 
-            if color_changed and not has_pressure:
-                cr.stroke()
         cr.stroke()
         cr.show_page()
 
