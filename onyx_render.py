@@ -42,6 +42,28 @@ def read_doc_list(tmpdir):
 
     return res
 
+
+def moving_average(bdata, window_size):
+    if window_size<=1:
+        return bdata
+
+    first = bdata[:1]
+    last = bdata[-1:]
+
+    before = window_size // 2
+    after = window_size - before
+
+    bpad = [first] * before
+    epad = [last] * after
+
+    bdata = np.concatenate((*bpad, bdata, *epad), axis=0)
+
+    csum = np.cumsum(bdata, 0)
+    bdata = csum[window_size:] - csum[:-window_size]
+
+    return bdata / window_size
+
+
 def subsample(bdata, subsample):
     if subsample<=1:
         return bdata
@@ -53,6 +75,13 @@ def subsample(bdata, subsample):
     bdata = bdata.reshape(-1, subsample, *bdata.shape[1:])
     return bdata.mean(1)
 
+
+def smoothen(bdata, window_size, n_subsample):
+    bdata = moving_average(bdata, window_size)
+    bdata = subsample(bdata, n_subsample)
+    return bdata
+
+
 def render_pdf(descriptor, tmpdir, filename):
     letter = (8.5 * 72, 11*72)
 
@@ -63,6 +92,7 @@ def render_pdf(descriptor, tmpdir, filename):
     pressure_pow = 0.5
     enable_pressure = True
     n_subsample = 2
+    average_win_size = 10
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
 
@@ -114,8 +144,8 @@ def render_pdf(descriptor, tmpdir, filename):
 
             has_pressure = enable_pressure and type == 5
 
-            points = subsample(points, n_subsample)
-            pressure = subsample(pressure, n_subsample)
+            points = smoothen(points, average_win_size, n_subsample)
+            pressure = smoothen(pressure, average_win_size, n_subsample)
 
             for r in range(points.shape[0]):
                 if has_pressure:
