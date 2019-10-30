@@ -12,6 +12,14 @@ It applies moving average to the strokes, so the resulting notes look super nice
 
 The text transcription of each stroke is also available in the files, so it could be overlaid on the PDF in order to be searchable, but this is not done here.
 
+## Rendering quality
+
+Output of this program:
+![](./assets/onyx_my.png)
+
+Official Onyx export:
+![](./assets/onyx_official.png)
+
 ## Usage
 
 Turn on the WiFi on your device (because of the bug in the reader that doesn't let you to create a backup of notes without WiFi enabled), go to the note app, select the three-line-menu from the top, Backup and Recover, select the floppy disc icon, choose a filename, click ok. Wait until the notes are exported. Connect the device to your computer, and copy over the zip file generated. It is in folder note/backup/local/<the filename you entered above>.zip. Copy that over to the computer, and run this tool on it.
