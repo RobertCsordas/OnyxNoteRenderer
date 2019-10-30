@@ -44,14 +44,16 @@ def read_doc_list(tmpdir):
 
 
 def moving_average(bdata, window_size):
-    if window_size<=1:
+    if window_size<=1 or bdata.shape[0] < 4:
         return bdata
 
-    first = bdata[:1]
-    last = bdata[-1:]
+    window_size = min(bdata.shape[0], window_size)
 
     before = window_size // 2
-    after = window_size - before
+    after = window_size - before - window_size % 1
+
+    first = (window_size * bdata[:1] - bdata[:after].sum(axis=0, keepdims=True)) / before
+    last = (window_size * bdata[-1:] - bdata[-before:].sum(axis=0, keepdims=True)) / after
 
     bpad = [first] * before
     epad = [last] * after
@@ -92,6 +94,7 @@ def render_pdf(descriptor, tmpdir, filename):
     pressure_pow = 0.5
     enable_pressure = True
     n_subsample = 2
+    min_thickness = 0.5
     average_win_size = 10
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
@@ -149,7 +152,7 @@ def render_pdf(descriptor, tmpdir, filename):
 
             for r in range(points.shape[0]):
                 if has_pressure:
-                    cr.set_line_width(max(thickness * width_scale * pressure[r],0.1))
+                    cr.set_line_width(max(thickness * width_scale * pressure[r], min_thickness))
 
                 if r==0:
                     cr.move_to(points[r][0], points[r][1])
@@ -164,7 +167,10 @@ def render_pdf(descriptor, tmpdir, filename):
         cr.stroke()
         cr.show_page()
 
-def render_all(zip_name, save_to):
+def render(zip_name, save_to, names):
+    if names is not None:
+        names = names.split(",")
+
     with tempfile.TemporaryDirectory() as tmpdir:
         # Extract note backup file
         with ZipFile(zip_name, 'r') as zipObj:
@@ -176,6 +182,9 @@ def render_all(zip_name, save_to):
             print("   ", os.path.join(note["dirname"], note["title"]))
 
         for note in notes:
+            if names is not None and note["title"] not in names:
+                continue
+
             dir = os.path.join(save_to, note["dirname"])
             os.makedirs(dir, exist_ok=True)
             fname = os.path.join(dir, "%s.pdf" % note["title"])
@@ -183,11 +192,12 @@ def render_all(zip_name, save_to):
             render_pdf(note, tmpdir, fname)
 
 if __name__ == "__main__":
-    if len(sys.argv)!=3:
-        print("Usage: %s <note backup file> <dir to render>" % sys.argv[0])
+    if len(sys.argv) not in [3,4]:
+        print("Usage: %s <note backup file> <dir to render> <optional: names of doc to render, split by ,>" % sys.argv[0])
         sys.exit(-1)
 
     zip_name = sys.argv[1]
     save_to = sys.argv[2]
+    names = None if len(sys.argv)<4 else sys.argv[3]
 
-    render_all(zip_name, save_to)
+    render(zip_name, save_to, names)
