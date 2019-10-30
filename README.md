@@ -8,7 +8,7 @@ Tested with Onyx Boox Note Pro, Firmware 2.1.2.
 
 It can read the backup file (a collection of SQLite databases) and reder PDFs out of them.
 
-Rendering strokes with pressure sensitivity is slow.
+It applies moving average to the strokes, so the resulting notes look super nice compared to the official export.
 
 The text transcription of each stroke is also available in the files, so it could be overlaid on the PDF in order to be searchable, but this is not done here.
 
