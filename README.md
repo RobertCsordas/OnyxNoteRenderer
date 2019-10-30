@@ -14,6 +14,8 @@ The text transcription of each stroke is also available in the files, so it coul
 
 ## Usage
 
+Turn on the WiFi on your device (because of the bug in the reader that doesn't let you to create a backup of notes without WiFi enabled), go to the note app, select the three-line-menu from the top, Backup and Recover, select the floppy disc icon, choose a filename, click ok. Wait until the notes are exported. Connect the device to your computer, and copy over the zip file generated. It is in folder note/backup/local/<the filename you entered above>.zip. Copy that over to the computer, and run this tool on it.
+
 ```bash
 ./onyx_render.py Note.zip notes 
 ```
@@ -45,6 +47,7 @@ points - a binary blog of points. See later
 thickness - line thickness
 matrixValues - transformation matrix
 pageUniqueId - the page containing this stroke
+color - the color of the stroke. Bits 0-7 is B, bits 8-15 is G, bits 16-23 is R.
 shapeType - 5 for pressure sensitive pen, 2 for the pressure-agnostic pen
 ```
 
