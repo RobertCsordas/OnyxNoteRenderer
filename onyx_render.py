@@ -10,6 +10,9 @@ from tqdm import tqdm
 import sys
 import cairo
 import math
+import traceback
+
+DEBUG=False
 
 def get_dir(dirs, parent):
     dlist = []
@@ -96,6 +99,7 @@ def render_pdf(descriptor, tmpdir, filename):
     n_subsample = 2
     min_thickness = 0.5
     average_win_size = 10
+    pressure_average_win_size = 20
 
     conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
 
@@ -148,7 +152,7 @@ def render_pdf(descriptor, tmpdir, filename):
             has_pressure = enable_pressure and type == 5
 
             points = smoothen(points, average_win_size, n_subsample)
-            pressure = smoothen(pressure, average_win_size, n_subsample)
+            pressure = smoothen(pressure, pressure_average_win_size, n_subsample)
 
             for r in range(points.shape[0]):
                 if has_pressure:
@@ -182,14 +186,23 @@ def render(zip_name, save_to, names):
             print("   ", os.path.join(note["dirname"], note["title"]))
 
         for note in notes:
-            if names is not None and note["title"] not in names:
+            full_note_name = os.path.join(note["dirname"], note["title"])
+
+            if names is not None and full_note_name not in names:
                 continue
 
             dir = os.path.join(save_to, note["dirname"])
             os.makedirs(dir, exist_ok=True)
             fname = os.path.join(dir, "%s.pdf" % note["title"])
 
-            render_pdf(note, tmpdir, fname)
+            try:
+                render_pdf(note, tmpdir, fname)
+            except:
+                print("Failed to render %s" % full_note_name)
+                if os.path.exists(fname):
+                    os.remove(fname)
+                if DEBUG:
+                    traceback.print_exc()
 
 if __name__ == "__main__":
     if len(sys.argv) not in [3,4]:
