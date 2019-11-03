@@ -20,6 +20,19 @@ Output of this program:
 Official Onyx export:
 ![](./assets/onyx_official.png)
 
+## Installation
+
+### Unix (Linux/Mac)
+
+```bash
+pip3 install -r requirements.txt
+./onyx_render.py
+```
+
+### Windows
+
+Check out [this file](https://github.com/xdever/OnyxNoteRenderer/releases/download/v0.1/onyx_render.exe) from the Releases page.
+
 ## Usage
 
 Turn on the WiFi on your device (because of the bug in the reader that doesn't let you to create a backup of notes without WiFi enabled), go to the note app, select the three-line-menu from the top, Backup and Recover, select the floppy disc icon, choose a filename, click ok. Wait until the notes are exported. Connect the device to your computer, and copy over the zip file generated. It is in folder note/backup/local/<the filename you entered above>.zip. Copy that over to the computer, and run this tool on it.
