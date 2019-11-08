@@ -12,6 +12,15 @@ import cairo
 import math
 import traceback
 
+width_scale = 0.3
+pressure_norm = 1000
+pressure_pow = 0.5
+enable_pressure = True
+n_subsample = 2
+min_thickness = 0.5
+average_win_size = 10
+pressure_average_win_size = 20
+
 DEBUG=False
 
 def get_dir(dirs, parent):
@@ -26,7 +35,7 @@ def get_dir(dirs, parent):
 def read_doc_list(tmpdir):
     res = []
 
-    conn = sqlite3.connect(os.path.join(tmpdir, "ShapeDatabase.db"))
+    conn = sqlite3.connect(os.path.join(tmpdir, "ShapeDatabase.db"), uri=True)
     c = conn.cursor()
     c.execute('select uniqueId,title,parentUniqueId from NoteModel where type = 0')
     dirs = {}
@@ -43,6 +52,7 @@ def read_doc_list(tmpdir):
         res.append({"id": id, "title": title, "pages": namelist,
                     "dirname": get_dir(dirs, parent)})
 
+    conn.close()
     return res
 
 
@@ -92,16 +102,8 @@ def render_pdf(descriptor, tmpdir, filename):
 
     context = cairo.PDFSurface(filename, *letter)
     scale = letter[1]
-    width_scale = 0.3
-    pressure_norm = 1000
-    pressure_pow = 0.5
-    enable_pressure = True
-    n_subsample = 2
-    min_thickness = 0.5
-    average_win_size = 10
-    pressure_average_win_size = 20
 
-    conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"))
+    conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"), uri=True)
 
     cr = cairo.Context(context)
     cr.set_source_rgb(0, 0, 0)
@@ -170,6 +172,8 @@ def render_pdf(descriptor, tmpdir, filename):
 
         cr.stroke()
         cr.show_page()
+
+    conn.close()
 
 def render(zip_name, save_to, names):
     if names is not None:
