@@ -100,80 +100,84 @@ def smoothen(bdata, window_size, n_subsample):
 def render_pdf(descriptor, tmpdir, filename):
     letter = (8.5 * 72, 11*72)
 
-    context = cairo.PDFSurface(filename, *letter)
-    scale = letter[1]
+    with cairo.PDFSurface(filename, *letter) as context:
+        scale = letter[1]
 
-    conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"), uri=True)
+        conn = sqlite3.connect(os.path.join(tmpdir, descriptor["id"] + ".db"), uri=True)
 
-    cr = cairo.Context(context)
-    cr.set_source_rgb(0, 0, 0)
-    cr.set_line_cap(cairo.LINE_CAP_ROUND)
-    cr.set_line_join(cairo.LINE_JOIN_ROUND)
+        cr = cairo.Context(context)
+        cr.set_source_rgb(0, 0, 0)
+        cr.set_line_cap(cairo.LINE_CAP_ROUND)
+        cr.set_line_join(cairo.LINE_JOIN_ROUND)
 
-    prev_color = (0,0,0)
-    prev_thickness = 0
+        prev_color = (0,0,0)
+        prev_thickness = 0
 
-    print("Rendering note %s" % descriptor["title"])
-    for page in tqdm(descriptor["pages"]):
-        c = conn.cursor()
-        c.execute('select points, matrixValues, thickness, shapeType, color from NewShapeModel where pageUniqueId = "'+page+'"')
+        print("Rendering note %s" % descriptor["title"])
+        for page in tqdm(descriptor["pages"]):
+            c = conn.cursor()
+            c.execute('select points, matrixValues, thickness, shapeType, color from NewShapeModel where pageUniqueId = "'+page+'"')
 
-        for i, row in enumerate(c):
-            # Read / parse DB entries
-            points, matrix, thickness, type, color = row
-            matrix = np.asarray(json.loads(matrix)["values"], dtype=np.float32).reshape(3,3)
-
-            d = np.frombuffer(points, dtype=np.float32)
-            d = d.byteswap()
-
-            d = d.reshape(-1, 6)
-
-            pressure = (d[:,2] / pressure_norm) ** pressure_pow
-            # Projection matrix
-            points = d[:, :2]
-            points = np.concatenate((points, np.ones([points.shape[0],1])), axis=1)
-            points = points @ matrix.T
-            points = points[:, :2]
-
-            # Draw
-            thickness_changed = prev_thickness != thickness
-            if thickness_changed:
-                cr.stroke()
-                prev_thickness = thickness
-                cr.set_line_width(thickness * width_scale)
-
-            color = color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF
-            color_changed = color != prev_color
-            if (color_changed):
-                cr.stroke()
-                prev_color = color
-                cr.set_source_rgb(color[2]/255, color[1]/255, color[0]/255);
-
-            points = points * scale
-
-            has_pressure = enable_pressure and type == 5
-
-            points = smoothen(points, average_win_size, n_subsample)
-            pressure = smoothen(pressure, pressure_average_win_size, n_subsample)
-
-            for r in range(points.shape[0]):
-                if has_pressure:
-                    cr.set_line_width(max(thickness * width_scale * pressure[r], min_thickness))
-
-                if r==0:
-                    cr.move_to(points[r][0], points[r][1])
+            for i, row in enumerate(c):
+                # Read / parse DB entries
+                points, matrix, thickness, type, color = row
+                if matrix is None:
+                    # Compatibility with older note format
+                    matrix = np.eye(3,3)
                 else:
-                    cr.line_to(points[r][0], points[r][1])
+                    matrix = np.asarray(json.loads(matrix)["values"], dtype=np.float32).reshape(3,3)
 
+                d = np.frombuffer(points, dtype=np.float32)
+                d = d.byteswap()
+
+                d = d.reshape(-1, 6)
+
+                pressure = (d[:,2] / pressure_norm) ** pressure_pow
+                # Projection matrix
+                points = d[:, :2]
+                points = np.concatenate((points, np.ones([points.shape[0],1])), axis=1)
+                points = points @ matrix.T
+                points = points[:, :2]
+
+                # Draw
+                thickness_changed = prev_thickness != thickness
+                if thickness_changed:
+                    cr.stroke()
+                    prev_thickness = thickness
+                    cr.set_line_width(thickness * width_scale)
+
+                color = color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF
+                color_changed = color != prev_color
+                if (color_changed):
+                    cr.stroke()
+                    prev_color = color
+                    cr.set_source_rgb(color[2]/255, color[1]/255, color[0]/255);
+
+                points = points * scale
+
+                has_pressure = enable_pressure and type == 5
+
+                points = smoothen(points, average_win_size, n_subsample)
+                pressure = smoothen(pressure, pressure_average_win_size, n_subsample)
+
+                for r in range(points.shape[0]):
                     if has_pressure:
-                        # Must do separate strokes to change thickness.
-                        cr.stroke()
+                        cr.set_line_width(max(thickness * width_scale * pressure[r], min_thickness))
+
+                    if r==0:
                         cr.move_to(points[r][0], points[r][1])
+                    else:
+                        cr.line_to(points[r][0], points[r][1])
 
-        cr.stroke()
-        cr.show_page()
+                        if has_pressure:
+                            # Must do separate strokes to change thickness.
+                            cr.stroke()
+                            cr.move_to(points[r][0], points[r][1])
 
-    conn.close()
+            cr.stroke()
+            cr.show_page()
+
+        conn.close()
 
 def render(zip_name, save_to, names):
     if names is not None:
