@@ -77,3 +77,7 @@ The transformation matrix describes an affine transformation of each point in ho
 #### The points blob
 
 This describes the actual points of the drawing. Each point uses 24 bytes of data. The first 8 are the X, Y coordinates in *big endian* float32. The next 4 is the pressure in the big endian float32. It's value seems to be between 0-6000. I haven't tried to decode the rest.
+
+## Acknowledges
+
+Thanks for gubi for debugging Windows version and old note format.
