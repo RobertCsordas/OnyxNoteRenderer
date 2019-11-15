@@ -26,7 +26,6 @@ Official Onyx export:
 
 ```bash
 pip3 install -r requirements.txt
-./onyx_render.py
 ```
 
 ### Windows
@@ -34,6 +33,8 @@ pip3 install -r requirements.txt
 Check out [this file](https://github.com/xdever/OnyxNoteRenderer/releases/download/v0.2/onyx_render.exe) from the Releases page.
 
 ## Usage
+
+### Rendering notes
 
 Turn on the WiFi on your device (because of the bug in the reader that doesn't let you to create a backup of notes without WiFi enabled), go to the note app, select the three-line-menu from the top, Backup and Recover, select the floppy disc icon, choose a filename, click ok. Wait until the notes are exported. Connect the device to your computer, and copy over the zip file generated. It is in folder note/backup/local/<the filename you entered above>.zip. Copy that over to the computer, and run this tool on it.
 
@@ -43,7 +44,15 @@ Turn on the WiFi on your device (because of the bug in the reader that doesn't l
 
 It will create a new directory *notes* with the same directory structure as in the reader's Note app and render each note as a pdf inside.
 
-It can take quite a long time, I haven't optimized for speed.
+### Fixing an annotated PDF
+
+At the moment only works with pressure-insensitive ink.
+
+```bash
+./fix_pdf.py source.pdf smoothed.pdf
+```
+
+It can also work in-place if the 2nd argument is omitted.
 
 ## File format
 
