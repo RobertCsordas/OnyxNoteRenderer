@@ -1,4 +1,4 @@
 tqdm
 numpy
 pycairo
-pymupdf
+pdfrw

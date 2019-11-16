@@ -46,7 +46,7 @@ It will create a new directory *notes* with the same directory structure as in t
 
 ### Fixing an annotated PDF
 
-At the moment only works with pressure-insensitive ink.
+Supports both pressure sensitive and pressure insensitive ink.
 
 ```bash
 ./fix_pdf.py source.pdf smoothed.pdf
