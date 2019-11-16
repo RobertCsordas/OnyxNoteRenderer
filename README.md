@@ -30,7 +30,7 @@ pip3 install -r requirements.txt
 
 ### Windows
 
-Check out [this file](https://github.com/xdever/OnyxNoteRenderer/releases/download/v0.2/onyx_render.exe) from the Releases page.
+Check out [onyx_renderer.exe](https://github.com/xdever/OnyxNoteRenderer/releases/download/v0.2/onyx_render.exe) and [fix_pdf.exe](https://github.com/xdever/OnyxNoteRenderer/releases/download/v0.3/fix_pdf.exe) from the Releases page.
 
 ## Usage
 
