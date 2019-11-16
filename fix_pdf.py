@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from onyx_render import smoothen
+from smoothen import smoothen
 import sys
 import pdfrw
 import zlib
