@@ -56,6 +56,23 @@ Supports both pressure sensitive and pressure insensitive ink.
 
 It can also work in-place if the 2nd argument is omitted.
 
+#### Invalid file format problems
+
+Sometimes fixing an annotated PDF can result in an error message like the one below:
+
+```
+pdfrw.errors.PdfParseError: Expected endstream endobj (line=13152, col=1, toke
+n='startxref')
+```
+This is because the Onyx reader is sometimes saves invalid PDF file. Some PDF viewers can ignore these errors and display the PDF nevertheless correctly, but unfortunately the PDF parser backend I'm using is not like that.
+
+Fortunately this happen super rarely. In case it happens, opening the PDF and changing/adding an annotation, and re-saving it usually helps.
+
+If you are on Linux it can be easily fixed without re-saving by qpdf, and then you can run the tool on the fixed file:
+```
+qpdf <path to your corrupted file> <path to a new, fixed file>
+```
+
 ## File format
 
 ### ShapeDatabase.db 
