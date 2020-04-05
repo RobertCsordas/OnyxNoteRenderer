@@ -24,6 +24,8 @@ Official Onyx export:
 
 ### Unix (Linux/Mac)
 
+Python 3 is required.
+
 ```bash
 pip3 install -r requirements.txt
 ```
